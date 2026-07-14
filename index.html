@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Rail Rush — 3D Endless Runner</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Syne:wght@700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module" crossorigin src="/subway-surfers-3d/assets/index-DnKl0cTs.js"></script>
+    <link rel="stylesheet" crossorigin href="/subway-surfers-3d/assets/index-B3j_9sWc.css">
+  </head>
+  <body>
+    <div id="app">
+      <canvas id="game-canvas"></canvas>
+
+      <div id="hud" class="hidden">
+        <div class="hud-top">
+          <div class="stat">
+            <span class="stat-label">SCORE</span>
+            <span id="score" class="stat-value">0</span>
+          </div>
+          <div class="hud-right">
+            <div class="stat coin-stat">
+              <span class="coin-icon"></span>
+              <span id="coins" class="stat-value">0</span>
+            </div>
+            <div class="stat skate-stat">
+              <span class="skate-icon"></span>
+              <span id="boards" class="stat-value">5</span>
+            </div>
+          </div>
+        </div>
+        <div id="skate-timer" class="skate-timer hidden">BOARD <span id="skate-secs">10</span>s</div>
+        <div class="hud-hint">← → lanes · ↑ jump · ↓ slide under · double-tap board</div>
+      </div>
+
+      <div id="overlay" class="overlay">
+        <div class="panel">
+          <p class="brand">RAIL RUSH</p>
+          <h1 id="overlay-title">Dodge. Dash. Survive.</h1>
+          <p id="overlay-sub" class="sub">
+            Slide under hanging blocks. Double-tap for a skateboard (10s). Collect boards on the track.
+          </p>
+          <div id="final-stats" class="final-stats hidden">
+            <div><span>Score</span><strong id="final-score">0</strong></div>
+            <div><span>Coins</span><strong id="final-coins">0</strong></div>
+            <div><span>Best</span><strong id="best-score">0</strong></div>
+          </div>
+          <button id="play-btn" type="button">PLAY</button>
+          <p class="controls-note">Keyboard or swipe to play</p>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
