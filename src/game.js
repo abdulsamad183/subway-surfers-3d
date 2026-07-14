@@ -5,6 +5,9 @@ import { EntitySystem } from './entities.js';
 import { AudioBus } from './audio.js';
 
 const BEST_KEY = 'rail-rush-best';
+const START_BOARDS = 5;
+const SKATE_DURATION = 10;
+const DOUBLE_TAP_MS = 320;
 
 export class Game {
   constructor(canvas) {
@@ -13,10 +16,12 @@ export class Game {
     this.running = false;
     this.score = 0;
     this.coins = 0;
+    this.boards = START_BOARDS;
     this.speed = 14;
     this.baseSpeed = 14;
     this.distance = 0;
     this.shake = 0;
+    this.lastTapAt = 0;
     this.clock = new THREE.Clock();
 
     this.renderer = new THREE.WebGLRenderer({
@@ -49,7 +54,6 @@ export class Game {
     this._bindInput();
     window.addEventListener('resize', () => this._onResize());
 
-    // Idle preview motion
     this._raf = requestAnimationFrame(() => this._loop());
   }
 
@@ -62,6 +66,9 @@ export class Game {
       hud: document.getElementById('hud'),
       score: document.getElementById('score'),
       coins: document.getElementById('coins'),
+      boards: document.getElementById('boards'),
+      skateTimer: document.getElementById('skate-timer'),
+      skateSecs: document.getElementById('skate-secs'),
       finalStats: document.getElementById('final-stats'),
       finalScore: document.getElementById('final-score'),
       finalCoins: document.getElementById('final-coins'),
@@ -70,6 +77,26 @@ export class Game {
 
     this.ui.play.addEventListener('click', () => this.start());
     this.ui.best.textContent = String(Number(localStorage.getItem(BEST_KEY) || 0));
+  }
+
+  _tryActivateBoard() {
+    if (!this.running || this.player.skating || this.boards <= 0) return false;
+    if (!this.player.activateSkate(SKATE_DURATION)) return false;
+    this.boards -= 1;
+    this.audio.skate();
+    this._updateHud();
+    return true;
+  }
+
+  _registerTap() {
+    const now = performance.now();
+    if (now - this.lastTapAt < DOUBLE_TAP_MS) {
+      this.lastTapAt = 0;
+      this._tryActivateBoard();
+      return true;
+    }
+    this.lastTapAt = now;
+    return false;
   }
 
   _bindInput() {
@@ -94,14 +121,37 @@ export class Game {
           break;
         case 'ArrowUp':
         case 'KeyW':
-        case 'Space':
           e.preventDefault();
           if (this.player.jump()) this.audio.jump();
           break;
+        case 'Space': {
+          e.preventDefault();
+          const now = performance.now();
+          if (now - this.lastTapAt < DOUBLE_TAP_MS) {
+            this.lastTapAt = 0;
+            this._tryActivateBoard();
+          } else {
+            const tapId = now;
+            this.lastTapAt = tapId;
+            setTimeout(() => {
+              if (this.lastTapAt === tapId) {
+                this.lastTapAt = 0;
+                if (this.running && this.player.jump()) this.audio.jump();
+              }
+            }, DOUBLE_TAP_MS);
+          }
+          break;
+        }
         case 'ArrowDown':
         case 'KeyS':
           e.preventDefault();
           if (this.player.slide()) this.audio.slide();
+          break;
+        case 'KeyF':
+        case 'ShiftLeft':
+        case 'ShiftRight':
+          e.preventDefault();
+          this._tryActivateBoard();
           break;
       }
     };
@@ -113,29 +163,34 @@ export class Game {
     const el = this.canvas;
 
     el.addEventListener(
-      'touchstart',
+      'pointerdown',
       (e) => {
-        const t = e.changedTouches[0];
-        sx = t.clientX;
-        sy = t.clientY;
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        sx = e.clientX;
+        sy = e.clientY;
         tracking = true;
       },
       { passive: true }
     );
 
     el.addEventListener(
-      'touchend',
+      'pointerup',
       (e) => {
         if (!tracking) return;
         tracking = false;
-        const t = e.changedTouches[0];
-        const dx = t.clientX - sx;
-        const dy = t.clientY - sy;
+        const dx = e.clientX - sx;
+        const dy = e.clientY - sy;
         if (!this.running) {
           this.start();
           return;
         }
-        if (Math.abs(dx) < 24 && Math.abs(dy) < 24) return;
+
+        // Tap (small movement) → double-tap board / ignore single
+        if (Math.abs(dx) < 22 && Math.abs(dy) < 22) {
+          this._registerTap();
+          return;
+        }
+
         if (Math.abs(dx) > Math.abs(dy)) {
           if (dx < 0) {
             if (this.player.moveLeft()) this.audio.lane();
@@ -161,9 +216,11 @@ export class Game {
     this.running = true;
     this.score = 0;
     this.coins = 0;
+    this.boards = START_BOARDS;
     this.distance = 0;
     this.speed = this.baseSpeed;
     this.shake = 0;
+    this.lastTapAt = 0;
     this.player.reset();
     this.world.reset();
     this.entities.clear();
@@ -172,12 +229,14 @@ export class Game {
     this.ui.overlay.classList.add('hidden');
     this.ui.hud.classList.remove('hidden');
     this.ui.finalStats.classList.add('hidden');
+    this.ui.skateTimer.classList.add('hidden');
     this._updateHud();
     this.clock.getDelta();
   }
 
   gameOver() {
     this.running = false;
+    this.player.endSkate();
     this.audio.crash();
     this.shake = 0.55;
 
@@ -185,24 +244,34 @@ export class Game {
     localStorage.setItem(BEST_KEY, String(best));
 
     this.ui.title.textContent = 'Wrecked on the rails';
-    this.ui.sub.textContent = 'One more run. The city never sleeps.';
+    this.ui.sub.textContent = 'Slide under blocks. Double-tap for a board.';
     this.ui.play.textContent = 'RUN AGAIN';
     this.ui.finalScore.textContent = String(Math.floor(this.score));
     this.ui.finalCoins.textContent = String(this.coins);
     this.ui.best.textContent = String(best);
     this.ui.finalStats.classList.remove('hidden');
     this.ui.hud.classList.add('hidden');
+    this.ui.skateTimer.classList.add('hidden');
     this.ui.overlay.classList.remove('hidden');
   }
 
   _updateHud() {
     this.ui.score.textContent = String(Math.floor(this.score));
     this.ui.coins.textContent = String(this.coins);
+    this.ui.boards.textContent = String(this.boards);
+
+    if (this.player.skating) {
+      this.ui.skateTimer.classList.remove('hidden');
+      this.ui.skateSecs.textContent = String(Math.ceil(Math.max(0, this.player.skateTimer)));
+    } else {
+      this.ui.skateTimer.classList.add('hidden');
+    }
   }
 
-  _spawnCoinBurst(x, y, z) {
+  _spawnCoinBurst(x, y, z, color = 0xffd24a) {
     for (let i = 0; i < 8; i++) {
-      const m = new THREE.Mesh(this.particleGeo, this.particleMat.clone());
+      const mat = new THREE.MeshBasicMaterial({ color });
+      const m = new THREE.Mesh(this.particleGeo, mat);
       m.position.set(x, y, z);
       m.userData.v = new THREE.Vector3(
         (Math.random() - 0.5) * 4,
@@ -251,8 +320,8 @@ export class Game {
     const lookY = 1.1 + this.player.y * 0.2;
     this.camera.lookAt(this.player.x * 0.2, lookY, -6);
 
-    // Speed FOV punch
-    const wantFov = 58 + Math.min(12, (this.speed - this.baseSpeed) * 0.45);
+    const skateBoost = this.player.skating ? 4 : 0;
+    const wantFov = 58 + Math.min(12, (this.speed - this.baseSpeed) * 0.45) + skateBoost;
     this.camera.fov += (wantFov - this.camera.fov) * Math.min(1, dt * 3);
     this.camera.updateProjectionMatrix();
 
@@ -268,13 +337,14 @@ export class Game {
     const dt = Math.min(0.05, this.clock.getDelta());
 
     if (this.running) {
-      this.speed = this.baseSpeed + Math.min(28, this.distance * 0.015);
+      const skateMul = this.player.skating ? 1.18 : 1;
+      this.speed = (this.baseSpeed + Math.min(28, this.distance * 0.015)) * skateMul;
       this.distance += this.speed * dt;
       this.score = this.distance * 1.2 + this.coins * 10;
 
       this.player.update(dt, this.speed);
       this.world.update(dt, this.speed);
-      const { coins, crashed } = this.entities.update(dt, this.speed, this.player);
+      const { coins, skates, crashed } = this.entities.update(dt, this.speed, this.player);
 
       if (coins > 0) {
         this.coins += coins;
@@ -282,11 +352,16 @@ export class Game {
         this._spawnCoinBurst(this.player.x, 1.2 + this.player.y, 0);
       }
 
+      if (skates > 0) {
+        this.boards += skates;
+        this.audio.skatePickup();
+        this._spawnCoinBurst(this.player.x, 1.3 + this.player.y, 0, 0x3de0c5);
+      }
+
       this._updateHud();
 
       if (crashed) this.gameOver();
     } else {
-      // gentle idle world scroll
       this.world.update(dt, 4);
       this.player.update(dt, 4);
     }

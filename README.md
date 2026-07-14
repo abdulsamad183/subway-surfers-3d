@@ -30,7 +30,10 @@ Open the URL Vite prints (usually `http://localhost:5173`).
 | Lane left | ← or A | Swipe left |
 | Lane right | → or D | Swipe right |
 | Jump | ↑, W, or Space | Swipe up |
-| Slide | ↓ or S | Swipe down |
+| Slide under | ↓ or S | Swipe down |
+| Skateboard (10s) | Double-tap Space / F / Shift | Double-tap |
+
+Start with **5 skateboards**. Collect more teal board pickups on the track. Yellow-striped hanging blocks require a slide.
 
 ## Features
 

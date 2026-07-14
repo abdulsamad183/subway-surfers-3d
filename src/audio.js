@@ -60,6 +60,16 @@ export class AudioBus {
     this.tone({ freq: 55, dur: 0.45, type: 'square', gain: 0.06, slide: -20 });
   }
 
+  skate() {
+    this.tone({ freq: 260, dur: 0.12, type: 'triangle', gain: 0.05, slide: 180 });
+    this.tone({ freq: 520, dur: 0.16, type: 'sine', gain: 0.04, slide: 120 });
+  }
+
+  skatePickup() {
+    this.tone({ freq: 600, dur: 0.09, type: 'triangle', gain: 0.05 });
+    this.tone({ freq: 900, dur: 0.12, type: 'sine', gain: 0.04, slide: 150 });
+  }
+
   start() {
     this.tone({ freq: 392, dur: 0.1, type: 'triangle', gain: 0.05 });
     this.tone({ freq: 523, dur: 0.14, type: 'triangle', gain: 0.045, slide: 40 });

@@ -22,12 +22,19 @@
             <span class="stat-label">SCORE</span>
             <span id="score" class="stat-value">0</span>
           </div>
-          <div class="stat coin-stat">
-            <span class="coin-icon"></span>
-            <span id="coins" class="stat-value">0</span>
+          <div class="hud-right">
+            <div class="stat coin-stat">
+              <span class="coin-icon"></span>
+              <span id="coins" class="stat-value">0</span>
+            </div>
+            <div class="stat skate-stat">
+              <span class="skate-icon"></span>
+              <span id="boards" class="stat-value">5</span>
+            </div>
           </div>
         </div>
-        <div class="hud-hint">← → lanes · ↑ jump · ↓ slide</div>
+        <div id="skate-timer" class="skate-timer hidden">BOARD <span id="skate-secs">10</span>s</div>
+        <div class="hud-hint">← → lanes · ↑ jump · ↓ slide under · double-tap board</div>
       </div>
 
       <div id="overlay" class="overlay">
@@ -35,7 +42,7 @@
           <p class="brand">RAIL RUSH</p>
           <h1 id="overlay-title">Dodge. Dash. Survive.</h1>
           <p id="overlay-sub" class="sub">
-            Surf the rails. Collect coins. Don't get hit.
+            Slide under hanging blocks. Double-tap for a skateboard (10s). Collect boards on the track.
           </p>
           <div id="final-stats" class="final-stats hidden">
             <div><span>Score</span><strong id="final-score">0</strong></div>

@@ -80,12 +80,69 @@ body,
   gap: 0.45rem;
 }
 
+.hud-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.55rem;
+}
+
+.skate-stat {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+}
+
 .coin-icon {
   width: 1.15rem;
   height: 1.15rem;
   border-radius: 50%;
   background: radial-gradient(circle at 30% 30%, #ffe08a, #f0b429 55%, #c47b08);
   box-shadow: 0 0 12px rgba(240, 180, 41, 0.55);
+}
+
+.skate-icon {
+  width: 1.35rem;
+  height: 0.45rem;
+  border-radius: 0.2rem;
+  background: linear-gradient(90deg, #3de0c5, #2bb8a0);
+  box-shadow: 0 0 12px rgba(61, 224, 197, 0.55);
+  position: relative;
+}
+
+.skate-icon::before,
+.skate-icon::after {
+  content: "";
+  position: absolute;
+  bottom: -0.18rem;
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 50%;
+  background: #1a1f2a;
+}
+
+.skate-icon::before {
+  left: 0.12rem;
+}
+
+.skate-icon::after {
+  right: 0.12rem;
+}
+
+.skate-timer {
+  position: absolute;
+  top: 5.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: "Syne", sans-serif;
+  font-weight: 800;
+  font-size: 0.95rem;
+  letter-spacing: 0.08em;
+  color: #10151f;
+  background: linear-gradient(105deg, #3de0c5, #ff8a3d);
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(61, 224, 197, 0.35);
 }
 
 .hud-hint {

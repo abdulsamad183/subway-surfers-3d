@@ -78,21 +78,80 @@ function makeBarrier() {
   return g;
 }
 
+/** Thin overhead bar — slide under */
 function makeLowBar() {
   const g = new THREE.Group();
-  const mat = new THREE.MeshStandardMaterial({ color: 0xff5a4a, roughness: 0.45, metalness: 0.25, emissive: 0x551100, emissiveIntensity: 0.3 });
+  const mat = new THREE.MeshStandardMaterial({
+    color: 0xff5a4a,
+    roughness: 0.45,
+    metalness: 0.25,
+    emissive: 0x551100,
+    emissiveIntensity: 0.3,
+  });
   const beam = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.22, 0.22), mat);
   beam.position.y = 1.35;
   beam.castShadow = true;
   g.add(beam);
   for (const x of [-0.75, 0.75]) {
-    const post = new THREE.Mesh(new THREE.BoxGeometry(0.12, 1.45, 0.12), new THREE.MeshStandardMaterial({ color: 0x888f9c, metalness: 0.6, roughness: 0.35 }));
+    const post = new THREE.Mesh(
+      new THREE.BoxGeometry(0.12, 1.45, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x888f9c, metalness: 0.6, roughness: 0.35 })
+    );
     post.position.set(x, 0.72, 0);
     post.castShadow = true;
     g.add(post);
   }
   g.userData.hit = { w: 1.55, h: 0.45, d: 0.4, y: 1.35 };
   g.userData.kind = 'low';
+  return g;
+}
+
+/**
+ * Solid hanging block / tunnel slab — clearly must slide under.
+ * Gap underneath ~1.0 unit so standing hits, sliding clears.
+ */
+function makeOverhang() {
+  const g = new THREE.Group();
+  const metal = new THREE.MeshStandardMaterial({ color: 0x4a5568, roughness: 0.45, metalness: 0.55 });
+  const warn = new THREE.MeshStandardMaterial({
+    color: 0xffb020,
+    roughness: 0.5,
+    metalness: 0.2,
+    emissive: 0x663300,
+    emissiveIntensity: 0.45,
+  });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x1c222e, roughness: 0.7, metalness: 0.3 });
+
+  // Tall posts on sides
+  for (const x of [-0.95, 0.95]) {
+    const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, 2.4, 0.22), metal);
+    post.position.set(x, 1.2, 0);
+    post.castShadow = true;
+    g.add(post);
+  }
+
+  // Thick slab hanging above the duck gap
+  const slab = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.15, 1.4), dark);
+  slab.position.set(0, 1.85, 0);
+  slab.castShadow = true;
+  slab.receiveShadow = true;
+  g.add(slab);
+
+  // Warning stripes on front face of slab
+  for (let i = 0; i < 4; i++) {
+    const stripe = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.95, 0.08), warn);
+    stripe.position.set(-0.7 + i * 0.46, 1.85, 0.72);
+    g.add(stripe);
+  }
+
+  // Top cap
+  const cap = new THREE.Mesh(new THREE.BoxGeometry(2.15, 0.12, 1.55), metal);
+  cap.position.set(0, 2.48, 0);
+  g.add(cap);
+
+  // Hit volume = the hanging slab only (clearance below ~1.25)
+  g.userData.hit = { w: 1.9, h: 1.15, d: 1.35, y: 1.85 };
+  g.userData.kind = 'overhang';
   return g;
 }
 
@@ -111,11 +170,65 @@ function makeCoin() {
   g.add(coin);
   const rim = new THREE.Mesh(
     new THREE.TorusGeometry(0.28, 0.035, 8, 24),
-    new THREE.MeshStandardMaterial({ color: 0xfff0a8, metalness: 0.9, roughness: 0.2, emissive: 0x665500, emissiveIntensity: 0.3 })
+    new THREE.MeshStandardMaterial({
+      color: 0xfff0a8,
+      metalness: 0.9,
+      roughness: 0.2,
+      emissive: 0x665500,
+      emissiveIntensity: 0.3,
+    })
   );
   g.add(rim);
   g.userData.hit = { w: 0.6, h: 0.6, d: 0.6, y: 1.0 };
   g.userData.kind = 'coin';
+  return g;
+}
+
+/** Pickup skateboard power-up floating on the track */
+function makeSkatePickup() {
+  const g = new THREE.Group();
+  const deck = new THREE.Mesh(
+    new THREE.BoxGeometry(0.5, 0.07, 1.05),
+    new THREE.MeshStandardMaterial({
+      color: 0x3de0c5,
+      roughness: 0.35,
+      metalness: 0.4,
+      emissive: 0x0a6655,
+      emissiveIntensity: 0.55,
+    })
+  );
+  deck.castShadow = true;
+  g.add(deck);
+
+  const glow = new THREE.Mesh(
+    new THREE.TorusGeometry(0.55, 0.04, 8, 24),
+    new THREE.MeshStandardMaterial({
+      color: 0xff8a3d,
+      emissive: 0xff8a3d,
+      emissiveIntensity: 0.7,
+      transparent: true,
+      opacity: 0.85,
+    })
+  );
+  glow.rotation.x = Math.PI / 2;
+  glow.position.y = 0.05;
+  g.add(glow);
+
+  const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1a1f2a, metalness: 0.6, roughness: 0.35 });
+  for (const [x, z] of [
+    [-0.16, 0.32],
+    [0.16, 0.32],
+    [-0.16, -0.32],
+    [0.16, -0.32],
+  ]) {
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 10), wheelMat);
+    w.rotation.z = Math.PI / 2;
+    w.position.set(x, -0.02, z);
+    g.add(w);
+  }
+
+  g.userData.hit = { w: 0.9, h: 0.7, d: 1.1, y: 1.0 };
+  g.userData.kind = 'skate';
   return g;
 }
 
@@ -129,7 +242,9 @@ export class EntitySystem {
       train: [],
       barrier: [],
       low: [],
+      overhang: [],
       coin: [],
+      skate: [],
     };
   }
 
@@ -144,6 +259,8 @@ export class EntitySystem {
     if (kind === 'train') mesh = makeTrain();
     else if (kind === 'barrier') mesh = makeBarrier();
     else if (kind === 'low') mesh = makeLowBar();
+    else if (kind === 'overhang') mesh = makeOverhang();
+    else if (kind === 'skate') mesh = makeSkatePickup();
     else mesh = makeCoin();
     this.scene.add(mesh);
     return mesh;
@@ -165,25 +282,39 @@ export class EntitySystem {
     const lane = Math.floor(Math.random() * 3);
     const roll = Math.random();
 
-    if (roll < 0.28) {
+    if (roll < 0.2) {
       this._spawn('train', lane, this.spawnZ);
-      // Extra coins beside train
       const other = (lane + 1 + Math.floor(Math.random() * 2)) % 3;
       for (let i = 0; i < 4; i++) {
         this._spawn('coin', other, this.spawnZ - i * 2.2, 1.1);
       }
+      if (Math.random() < 0.35) this._spawn('skate', other, this.spawnZ - 9, 1.15);
       this.spawnZ -= 18 + Math.random() * 4;
-    } else if (roll < 0.48) {
+    } else if (roll < 0.36) {
       this._spawn('barrier', lane, this.spawnZ);
       this._spawn('coin', lane, this.spawnZ - 4, 2.4);
       this.spawnZ -= 12 + Math.random() * 3;
-    } else if (roll < 0.68) {
+    } else if (roll < 0.52) {
+      // Solid hang blocks — must slide under
+      this._spawn('overhang', lane, this.spawnZ);
+      const side = (lane + (Math.random() < 0.5 ? 1 : 2)) % 3;
+      this._spawn('coin', side, this.spawnZ - 2, 1.0);
+      if (Math.random() < 0.4) this._spawn('skate', side, this.spawnZ - 5, 1.15);
+      this.spawnZ -= 12 + Math.random() * 3;
+    } else if (roll < 0.64) {
       this._spawn('low', lane, this.spawnZ);
       const side = (lane + (Math.random() < 0.5 ? 1 : 2)) % 3;
       this._spawn('coin', side, this.spawnZ - 2, 1.0);
       this.spawnZ -= 11 + Math.random() * 3;
-    } else if (roll < 0.82) {
-      // Twin barriers forcing lane choice
+    } else if (roll < 0.74) {
+      // Twin overhangs — one free lane
+      const a = Math.floor(Math.random() * 3);
+      let b = Math.floor(Math.random() * 3);
+      while (b === a) b = Math.floor(Math.random() * 3);
+      this._spawn('overhang', a, this.spawnZ);
+      this._spawn('barrier', b, this.spawnZ);
+      this.spawnZ -= 13;
+    } else if (roll < 0.84) {
       const a = Math.floor(Math.random() * 3);
       let b = Math.floor(Math.random() * 3);
       while (b === a) b = Math.floor(Math.random() * 3);
@@ -191,18 +322,22 @@ export class EntitySystem {
       this._spawn('barrier', b, this.spawnZ);
       this.spawnZ -= 13;
     } else {
-      // Coin line
+      // Coin / skate mix line
       const lineLane = Math.floor(Math.random() * 3);
       for (let i = 0; i < 6; i++) {
-        this._spawn('coin', lineLane, this.spawnZ - i * 1.8, 1.05 + (i % 2) * 0.35);
+        if (i === 3 && Math.random() < 0.55) {
+          this._spawn('skate', lineLane, this.spawnZ - i * 1.8, 1.15);
+        } else {
+          this._spawn('coin', lineLane, this.spawnZ - i * 1.8, 1.05 + (i % 2) * 0.35);
+        }
       }
       this.spawnZ -= 14;
     }
 
-    // Occasionally fill with another obstacle at higher difficulty
-    if (difficulty > 0.45 && Math.random() < 0.35) {
+    if (difficulty > 0.4 && Math.random() < 0.4) {
       const l2 = Math.floor(Math.random() * 3);
-      this._spawn(Math.random() < 0.5 ? 'barrier' : 'low', l2, this.spawnZ + 6);
+      const kinds = ['barrier', 'low', 'overhang'];
+      this._spawn(kinds[Math.floor(Math.random() * kinds.length)], l2, this.spawnZ + 6);
     }
   }
 
@@ -229,6 +364,7 @@ export class EntitySystem {
     }
 
     let coins = 0;
+    let skates = 0;
     let crashed = false;
 
     const pBox = player.getHitBox();
@@ -242,6 +378,11 @@ export class EntitySystem {
         e.mesh.rotation.y = e.spin;
         e.mesh.position.y = 1.0 + Math.sin(e.spin * 2) * 0.12;
       }
+      if (e.kind === 'skate') {
+        e.spin += dt * 2.5;
+        e.mesh.rotation.y = e.spin;
+        e.mesh.position.y = 1.15 + Math.sin(e.spin * 2.2) * 0.15;
+      }
 
       if (e.mesh.position.z > 8) {
         e.alive = false;
@@ -249,23 +390,17 @@ export class EntitySystem {
         continue;
       }
 
-      // Only collide when near player
       if (Math.abs(e.mesh.position.z) > 4.5) continue;
 
       const hit = e.mesh.userData.hit;
       const eBox = {
         x: e.mesh.position.x,
-        y: e.mesh.position.y + (e.kind === 'coin' ? 0 : hit.y - (e.kind === 'coin' ? 0 : 0)),
+        y: e.kind === 'coin' || e.kind === 'skate' ? e.mesh.position.y : hit.y,
         z: e.mesh.position.z,
         w: hit.w,
         h: hit.h,
         d: hit.d,
       };
-      if (e.kind === 'coin') {
-        eBox.y = e.mesh.position.y;
-      } else {
-        eBox.y = hit.y;
-      }
 
       if (!aabbHit(pBox, eBox)) continue;
 
@@ -276,22 +411,30 @@ export class EntitySystem {
         continue;
       }
 
-      if (e.kind === 'low') {
-        // Slide under clears it
+      if (e.kind === 'skate') {
+        e.alive = false;
+        this._release(e.mesh);
+        skates += 1;
+        continue;
+      }
+
+      // Must slide under overhead hazards
+      if (e.kind === 'low' || e.kind === 'overhang') {
         if (player.sliding) continue;
       }
       if (e.kind === 'barrier') {
-        // Jump clears mid barrier
         if (player.jumping && player.y > 0.85) continue;
       }
-      // Trains always lethal unless somehow high enough (not normally)
       if (e.kind === 'train' && player.y > 2.3) continue;
+
+      // Active skateboard = full protection for the timer
+      if (player.skating) continue;
 
       if (player.invuln <= 0) crashed = true;
     }
 
     this.entities = this.entities.filter((e) => e.alive);
-    return { coins, crashed };
+    return { coins, skates, crashed };
   }
 }
 
