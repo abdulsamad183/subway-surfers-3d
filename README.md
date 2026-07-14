@@ -6,6 +6,14 @@ A browser Subway Surfers–style endless runner built with **Three.js** and **Vi
 
 **https://abdulsamad183.github.io/subway-surfers-3d/**
 
+### Enable GitHub Pages (one-time)
+
+1. Open [Pages settings](https://github.com/abdulsamad183/subway-surfers-3d/settings/pages)
+2. **Source:** Deploy from a branch
+3. **Branch:** `gh-pages` → `/ (root)` → Save
+
+Pushes to `main` rebuild and update `gh-pages` automatically.
+
 ## Run locally
 
 ```bash
